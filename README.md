@@ -1,2 +1,2 @@
 # jok-llmarchi-kli
-Just do what we do
+Just do it like we do 👊🏼
