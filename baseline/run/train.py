@@ -1,3 +1,6 @@
+import sys
+sys.path.append("/data1/kaggle/Korean_DCS_2024/baseline/")
+
 
 import argparse
 
@@ -6,7 +9,7 @@ from datasets import Dataset
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from trl import SFTTrainer, SFTConfig
 
-from baseline.src.data import CustomDataset, DataCollatorForSupervisedDataset
+from src.data import CustomDataset, DataCollatorForSupervisedDataset
 
 
 '''
@@ -20,19 +23,6 @@ CUDA_VISIBLE_DEVICES=1,3 python -m run.train \
 '''
 
 
-# fmt: off
-parser = argparse.ArgumentParser(prog="train", description="Training about Conversational Context Inference.")
-
-g = parser.add_argument_group("Common Parameter")
-g.add_argument("--model_id",                    type=str, default='upstage/SOLAR-10.7B-Instruct-v1.0',  required=True,              help="model file path or name")
-g.add_argument("--tokenizer",                   type=str, defaults='upstage/SOLAR-10.7B-Instruct-v1.0',                             help="huggingface tokenizer path or name")
-g.add_argument("--save_dir",                    type=str, default="resource/results",                                               help="model save path")
-g.add_argument("--batch_size",                  type=int, default=1,                                                                help="batch size (both train and eval)")
-g.add_argument("--gradient_accumulation_steps", type=int, default=64,                                                               help="gradient accumulation steps")
-g.add_argument("--warmup_steps",                type=int, default=20,                                                               help="scheduler warmup steps")
-g.add_argument("--lr",                          type=float, default=2e-5,                                                           help="learning rate")
-g.add_argument("--epoch",                       type=int,   default=5,                                                              help="training epoch")
-# fmt: on
 
 
 def main(args):
@@ -46,8 +36,8 @@ def main(args):
     tokenizer = AutoTokenizer.from_pretrained(args.tokenizer)
     tokenizer.pad_token = tokenizer.eos_token
 
-    train_dataset = CustomDataset("resource/dataset/일상대화요약_train.json", tokenizer)
-    valid_dataset = CustomDataset("resource/dataset/일상대화요약_dev.json", tokenizer)
+    train_dataset = CustomDataset("/data1/kaggle/Korean_DCS_2024/baseline/resource/data/일상대화요약_train.json", tokenizer)
+    valid_dataset = CustomDataset("/data1/kaggle/Korean_DCS_2024/baseline/resource/data/일상대화요약_dev.json", tokenizer)
 
     train_dataset = Dataset.from_dict({
         'input_ids': train_dataset.inp,
@@ -64,7 +54,7 @@ def main(args):
         overwrite_output_dir=True,
         do_train=True,
         do_eval=True,
-        eval_strategy="epoch",
+        # eval_strategy="epoch",
         per_device_train_batch_size=args.batch_size,
         per_device_eval_batch_size=args.batch_size,
         gradient_accumulation_steps=args.gradient_accumulation_steps,
@@ -92,6 +82,7 @@ def main(args):
         train_dataset=train_dataset,
         eval_dataset=valid_dataset,
         data_collator=data_collator,
+        # eval_strategy="epoch",
         args=training_args,
     )
 
@@ -99,4 +90,30 @@ def main(args):
 
 
 if __name__ == "__main__":
-    exit(main(parser.parse_args()))
+    # fmt: off
+    # parser = argparse.ArgumentParser(prog="train", description="Training about Conversational Context Inference.")
+
+    # g = parser.add_argument_group("Common Parameter")
+    # g.add_argument("--model_id",                    type=str, default='upstage/SOLAR-10.7B-Instruct-v1.0',  required=True,              help="model file path or name")
+    # g.add_argument("--tokenizer",                   type=str, default='upstage/SOLAR-10.7B-Instruct-v1.0',                              help="huggingface tokenizer path or name")
+    # g.add_argument("--save_dir",                    type=str, default="resource/results",                                               help="model save path")
+    # g.add_argument("--batch_size",                  type=int, default=1,                                                                help="batch size (both train and eval)")
+    # g.add_argument("--gradient_accumulation_steps", type=int, default=64,                                                               help="gradient accumulation steps")
+    # g.add_argument("--warmup_steps",                type=int, default=20,                                                             help="scheduler warmup steps")
+    # g.add_argument("--lr",                          type=float, default=2e-5,                                                           help="learning rate")
+    # g.add_argument("--epoch",                       type=int,   default=5,                                                              help="training epoch")
+    # # fmt: on
+
+    class Configuration:
+        model_id = 'upstage/SOLAR-10.7B-Instruct-v1.0'
+        tokenizer = 'upstage/SOLAR-10.7B-Instruct-v1.0'
+        save_dir = 'resource/results'
+        batch_size = 1
+        gradient_accumulation_steps = 64
+        warmup_steps = 20
+        lr = 2e-5
+        epoch = 5
+
+    config = Configuration
+    # p = parser.parse_args()
+    main(config)

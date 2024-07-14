@@ -39,9 +39,9 @@ def main(args):
         tokenizer.convert_tokens_to_ids("<|eot_id|>")
     ]
 
-    dataset = CustomDataset("resource/dataset/일상대화요약_test.json", tokenizer)
+    dataset = CustomDataset("resource/data/일상대화요약_test.json", tokenizer)
 
-    with open("resource/dataset/일상대화요약_test.json", "r") as f:
+    with open("resource/data/일상대화요약_test.json", "r") as f:
         result = json.load(f)
 
     for idx in tqdm.tqdm(range(len(dataset))):
