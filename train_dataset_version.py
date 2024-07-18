@@ -21,6 +21,7 @@ from preprocess import (
 
 import torch
 import torch.nn as nn
+from torch.utils.tensorboard import SummaryWriter
 
 from datasets import Dataset, Features, Value, Sequence
 # from dataclasses import dataclass, field
@@ -57,6 +58,8 @@ from prompt import jh_prompt_template
 
 
 from transformers.trainer_callback import TrainerCallback # peft의 경우 Trainer로 잘 저장이 안되는 이슈가 있음. // 최신버전에서는 없어졋난봄.
+from transformers.integrations import TensorBoardCallback
+import tensorboard
 
 
 logger = logging.getLogger(__name__)
@@ -91,12 +94,10 @@ def define_argparser(
     p.add_argument("--gradient_accumulation_steps", type=int, default=16,  help="gradient accumulation steps")
     p.add_argument('--warmup_steps', default=10)
     p.add_argument("--learning_rate", default=2e-5)
-    p.add_argument("--gradient_accumulateion_steps", default=1)
 
     # p.add_argument('--micro_batch_size', default=16)
     p.add_argument('--num_epoch', default=10)
     p.add_argument('--logging_steps', default=16)
-
 
     # loss function
     p.add_argument("--loss_funtion", default='SFT')
@@ -107,7 +108,7 @@ def define_argparser(
     p.add_argument("--submit_data_path", default='/data1/kaggle/Korean_DCS_2024/data/일상대화요약_dev.json')
     p.add_argument("--result_submit_path", default=result_save_name)
     p.add_argument("--model_save_path", default=model_save_root_path)
-
+    p.add_argument('--tensorboard_log_path', default="/data1/kaggle/Korean_DCS_2024/result/logs/jh_(llama38B)_(4bit)_(warm10)_(1_16)_(prompt1)_(ga_version)")
 
     # quantization arguments   -> bits
     # p.add_argument('--load_in_bit', default='')
@@ -255,6 +256,10 @@ if __name__ == '__main__':
     pprint.pprint(config)
     print("-"*300)
 
+    # log directory
+    writer = SummaryWriter(log_dir=config.tensorboard_log_path)
+    tensorboard_callback = TensorBoardCallback(writer)
+
 
     model, tokenizer = load_model_tokenizer(
         model_name_or_path = config.model_name_or_path,
@@ -331,6 +336,8 @@ if __name__ == '__main__':
         # eval_strategy="epoch",
         args=training_args,
         peft_config=loraconfig,
+        callbacks=[tensorboard_callback],
+        # report_to="tensorboard"
     )
 
     trainer.train()
