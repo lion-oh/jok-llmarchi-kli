@@ -8,6 +8,8 @@ from tqdm import tqdm
 import argparse
 import pandas as pd
 
+from metrics import compute_metric
+
 from preprocess import (
     CustomDataset,
     torchdataset_generator,
@@ -73,8 +75,8 @@ SEED = 42
 
 
 def define_argparser(
-        result_save_name='./result/inference/result_jh_v1.json', 
-        model_save_root_path = './result/model_history/',
+        result_save_name='./result/inference/result_jh_v1.json',  # 안쓰일거같아요
+        model_save_root_path = './result/model_history/',         # 
         peft_type='MoRA',):
 
     if not peft_type in __PEFT_TYPE__:
@@ -86,7 +88,7 @@ def define_argparser(
     p.add_argument('--model_name_or_path', default='beomi/Llama-3-Open-Ko-8B')    # 모델 선호하는 것 있음 바꾸면되는거구        // upstage/SOLAR-10.7B-Instruct-v1.0        
     
     # BitsAndBytesConfig으로 바꿔야함.
-    p.add_argument("--model_bitsize", default='4bit')
+    p.add_argument("--model_bitsize", default='8bit')
     p.add_argument("--max_length", default=4096)
 
     # model training arguments
@@ -100,7 +102,7 @@ def define_argparser(
     p.add_argument('--logging_steps', default=16)
 
     # loss function
-    p.add_argument("--loss_funtion", default='SFT')
+    p.add_argument("--loss_funtion", default='SFT') # DPO
 
     # path                                       
     p.add_argument("--train_data_path", default='/data1/kaggle/Korean_DCS_2024/data/일상대화요약_train.json')
@@ -112,8 +114,8 @@ def define_argparser(
 
     # quantization arguments   -> bits
     # p.add_argument('--load_in_bit', default='')
-    p.add_argument("--model_dtype", default='bfloat16')
-    p.add_argument("--device", default='cuda')
+    # p.add_argument("--model_dtype", default='bfloat16')
+    # p.add_argument("--device", default='cuda')
     '''
     bnb_config = BitsAndBytesConfig(
         load_in_4bit=True,
@@ -152,10 +154,12 @@ def define_argparser(
     bnb_4bit_quant_type="nf4",
     bnb_4bit_compute_dtype=torch.bfloat16
     )
+
+    bnb_config -> model, TrainerArguem
     '''
 
 
-    p.add_argument("--save_dir", default='./result/model_history/')
+    p.add_argument("--save_dir", default='./result/model_history/') # 
 
     config = p.parse_args()
 
@@ -198,7 +202,7 @@ def load_peft_config(config):
     elif config.peft_method == 'LoRA':
         ############################################################ config 추가 ###############################
         loraconfig = LoraConfig(
-            r=16, 
+            r=16,              # config.
             lora_alpha=32, 
             lora_dropout=0.05,
             bias='none',
@@ -208,7 +212,12 @@ def load_peft_config(config):
 
     return loraconfig
 
-def wrapping_model_with_peft(model, loraconfig, precise_layernorm=False, precise_final_layer=True):
+def wrapping_model_with_peft(
+        model, 
+        loraconfig, 
+        precise_layernorm=False, 
+        precise_final_layer=True
+        ):
 
     def print_trainable_parameters(model):
         """
@@ -223,7 +232,6 @@ def wrapping_model_with_peft(model, loraconfig, precise_layernorm=False, precise
         print(
             f"trainable params: {trainable_params} || all params: {all_param} || trainable%: {100 * trainable_params / all_param}"
         )
-
 
     for param in model.parameters():
         param.requires_grad = False  # freeze the model - train adapters later
@@ -251,7 +259,9 @@ def wrapping_model_with_peft(model, loraconfig, precise_layernorm=False, precise
 if __name__ == '__main__':
     import pprint
     
-    config = define_argparser(peft_type='LoRA')
+    config = define_argparser(
+        peft_type='LoRA'
+    )
     print("-"*100 + 'config' + '-'*100)
     pprint.pprint(config)
     print("-"*300)
@@ -270,7 +280,8 @@ if __name__ == '__main__':
 
     model = wrapping_model_with_peft(
         model = model,
-        loraconfig = loraconfig)
+        loraconfig = loraconfig
+    )
     
 
     # data process
@@ -297,16 +308,17 @@ if __name__ == '__main__':
         config=config
     )
 
+    import transformers
 
     training_args = SFTConfig(
-        output_dir=config.save_dir,
+        output_dir=config.save_dir, # 
         overwrite_output_dir=True,
         do_train=True,
         do_eval=True,
         # eval_strategy="epoch",
         per_device_train_batch_size=config.batch_size,
         per_device_eval_batch_size=config.batch_size,
-        gradient_accumulation_steps=config.gradient_accumulation_steps,
+        gradient_accumulation_steps=config.gradient_accumulation_steps, # 
         learning_rate=config.learning_rate,
         weight_decay=0.1,
         num_train_epochs=config.num_epoch,
@@ -315,15 +327,21 @@ if __name__ == '__main__':
         warmup_steps=config.warmup_steps,
         log_level="info",
         logging_steps=1,
-        save_strategy="epoch",
         save_total_limit=5,
         # bf16=True,
-        fp16=True,
+        fp16=True,   ######### 4bit, 8bit, 
         gradient_checkpointing=True,
         gradient_checkpointing_kwargs={"use_reentrant": False},
-        max_seq_length=1024,
+        max_seq_length=config.max_length,
         packing=True,
+        save_strategy="epoch",
         seed=SEED,
+        # load_best_model_at_end=True, # https://discuss.huggingface.co/t/save-only-best-model-in-trainer/8442
+        # eval_strategy='epoch',
+        # metric_for_best_model = 'loss',
+        # metric_for_best_model="f1",
+        # evaluation_strategy="steps",
+        # eval_steps=10,
     )
 
     trainer = SFTTrainer(
@@ -333,11 +351,10 @@ if __name__ == '__main__':
         eval_dataset=valid_dataset,
         # data_collator=partial(collate_fn, tokenizer=tokenizer),
         # data_collator=DataCollatorForLanguageModeling(tokenizer, mlm=False),
-        # eval_strategy="epoch",
         args=training_args,
         peft_config=loraconfig,
         callbacks=[tensorboard_callback],
-        # report_to="tensorboard"
+        # compute_metrics=compute_metric,
     )
 
     trainer.train()
