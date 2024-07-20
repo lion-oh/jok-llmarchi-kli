@@ -241,14 +241,6 @@ class PreprocessData:
         xdata = ''.join(result)
         return xdata
     
-    def merge_chat_with_prompt(
-            self, 
-            chat:str, 
-            prompt:str
-        )->str:
-        end_prompt = prompt
-        out = chat + '\n\n' + end_prompt
-        return out
 
     def load_data(self, fname):
         with open(fname, "r") as f:
@@ -256,6 +248,14 @@ class PreprocessData:
             return data
 
 
+def preprocess_merge_chat_with_prompt(
+        example,
+    )->str:
+    end_prompt = example['object_chat_prompt']
+    chat = example['chat_data']
+    out = chat + '\n\n' + end_prompt
+    example['chat_with_oject_prompt'] = out
+    return example
 
 def preprocess_add_object_prompt(example, user_prompt):
     object_chat_prompt = user_prompt(example['subject_keyword'], example['speaker1'], example['speaker2'])
@@ -274,7 +274,7 @@ def preprocess_add_message_prompt(example, system_prompt):
 def preprocess_make_tokens(example, tokenizer, config):
     
     source = tokenizer.apply_chat_template(
-        example['system_user_message_prompt'],
+        example['chat_with_oject_prompt'],
         add_generation_prompt=True,
         return_tensors="pt",
     )
@@ -306,6 +306,7 @@ def preprocess_to_tokenize(
 
     train_dataset = Dataset.from_pandas(train_df)
     train_dataset = train_dataset.map(lambda x: preprocess_add_object_prompt(x, object_prompt))
+    train_dataset = train_dataset.map(lambda x: preprocess_merge_chat_with_prompt(x))
     train_dataset = train_dataset.map(lambda x: preprocess_add_message_prompt(x, system_prompt))
     train_dataset = train_dataset.map(lambda x: preprocess_make_tokens(x, tokenizer, config))
     return train_dataset
