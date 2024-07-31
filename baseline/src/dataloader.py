@@ -1,7 +1,30 @@
 import json
+from typing import List
 
 import torch
 from torch.utils.data import Dataset
+
+from prompt.templates.base import PROMPT_PREFIX
+
+
+
+def pprint_data(data: List, k: int = 3, n: int = 5):
+    data = data[:k]
+    for sample in data:
+        id = sample.get('id')
+        conversations = sample['input'].get('conversation')[:n]
+        subject_keyword = sample['input'].get('subject_keyword')
+        outputs = sample['output']
+        print(f"\n**** Conversation ID: {id} ****\n")
+        print("INPUTS:")
+        print("\t<대화내용>")
+        for cvt in conversations:
+            speaker = cvt.get('speaker')
+            utterance = cvt.get('utterance', '')
+            print(f'\t- 화자({speaker}): {utterance}')
+        print('\t- ...')
+        print(f'\t<핵심 키워드>: {subject_keyword[0]}\n')
+        print(f"OUTPUT: {outputs}\n\n")
 
 
 class CustomDataset(Dataset):
@@ -10,7 +33,7 @@ class CustomDataset(Dataset):
         self.inp = []
         self.label = []
 
-        PROMPT = '''You are a helpful AI assistant. Please answer the user's questions kindly. 당신은 유능한 AI 어시스턴트 입니다. 사용자의 질문에 대해 친절하게 답변해주세요.'''
+        PROMPT = PROMPT_PREFIX
 
         with open(fname, "r") as f:
             data = json.load(f)
@@ -22,8 +45,8 @@ class CustomDataset(Dataset):
                 utterance = cvt['utterance']
                 chat.append(f"화자{speaker}: {utterance}")
             chat = "\n".join(chat)
-
-            question = f"[Question]\n위 {', '.join(inp['subject_keyword'])} 주제에 대한 대화를 요약해주세요."
+            keyword = ', '.join(inp['subject_keyword'])
+            question = f"[Question]\n위 {keyword} 주제에 대한 대화를 요약해주세요." # 밖으로~~
             chat = chat + "\n\n" + question
 
             return chat
@@ -77,3 +100,13 @@ class DataCollatorForSupervisedDataset(object):
             labels=labels,
             attention_mask=input_ids.ne(self.tokenizer.pad_token_id),
         )
+
+
+
+if __name__ == "__main__":
+    '''Print Sample Data'''
+    fileName = 'sample.json'
+    PATH = f'../resource/data/{fileName}'
+    with open(PATH, "r") as file:
+        data = json.load(file)
+    pprint_data(data)

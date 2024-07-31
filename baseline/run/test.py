@@ -7,7 +7,7 @@ import torch
 import numpy
 from transformers import AutoTokenizer, AutoModelForCausalLM
 
-from src.data import CustomDataset
+from baseline.src.dataloader import CustomDataset
 
 
 # fmt: off
@@ -22,7 +22,6 @@ g.add_argument("--device", type=str, required=True, help="device to load the mod
 
 
 def main(args):
-
     model = AutoModelForCausalLM.from_pretrained(
         args.model_id,
         torch_dtype=torch.bfloat16,
