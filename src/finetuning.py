@@ -8,10 +8,10 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 from trl import SFTTrainer, SFTConfig
 from peft import LoraConfig, get_peft_model, TaskType
 
-from src.configs import train_config as TRAIN_CONFIG
-from src.configs.datasets import base_dataset as DATASET_CONFIG
-from src.data.dataloader import CustomDataset, DataCollatorForSupervisedDataset
-from src.utils.config_utils import (
+from configs import train_config as TRAIN_CONFIG
+from configs.datasets import base_dataset as DATASET_CONFIG
+from data.dataloader import CustomDataset, DataCollatorForSupervisedDataset
+from utils.config_utils import (
     update_config,
     generate_peft_config
 )
