@@ -4,7 +4,12 @@ sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 
 import torch
 from datasets import Dataset
-from transformers import AutoModelForCausalLM, AutoTokenizer
+from transformers import (
+    AutoModelForCausalLM, 
+    AutoTokenizer,
+    BitsAndBytesConfig
+)
+
 from trl import SFTTrainer, SFTConfig
 from peft import LoraConfig, get_peft_model, TaskType
 
@@ -21,12 +26,19 @@ from utils.config_utils import (
 def main(**kwargs):
     train_config = TRAIN_CONFIG()
     update_config(train_config, **kwargs)
+    
+    bnb_config = BitsAndBytesConfig(
+        load_in_4bit=True,
+        bnb_4bit_quant_type="nf4",
+        bnb_4bit_compute_dtype=torch.bfloat16
+    )
 
     model = AutoModelForCausalLM.from_pretrained(
         train_config.model_id,
-        torch_dtype=torch.bfloat16,
+        # torch_dtype=torch.bfloat16,
         device_map="auto",
-        cache_dir=train_config.cache_dir
+        cache_dir=train_config.cache_dir,
+        quantization_config=bnb_config,
     )
 
     tokenizer = AutoTokenizer.from_pretrained(train_config.model_id if train_config.tokenizer is None else train_config.tokenizer)
@@ -78,7 +90,7 @@ def main(**kwargs):
         bf16=True,  # CUDA 환경에서만 가능.
         gradient_checkpointing=True,
         gradient_checkpointing_kwargs={"use_reentrant": False},
-        max_seq_length=1024,  # 이슈
+        max_seq_length=4096,  # 이슈
         packing=True,
         seed=42,
     )
