@@ -37,6 +37,11 @@ def main(**kwargs):
         model = get_peft_model(model, peft_config)
         model.print_trainable_parameters()
 
+    # 개인 환경에 맞게 경로 설정
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    DATASET_CONFIG.train_split = os.path.join(current_dir, DATASET_CONFIG.train_split)
+    DATASET_CONFIG.valid_split = os.path.join(current_dir, DATASET_CONFIG.valid_split)
+
     train_dataset = CustomDataset(DATASET_CONFIG.train_split, tokenizer)
     valid_dataset = CustomDataset(DATASET_CONFIG.valid_split, tokenizer)
 
