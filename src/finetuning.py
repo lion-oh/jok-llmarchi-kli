@@ -96,4 +96,4 @@ if __name__ == "__main__":
     #     "model_id": "microsoft/Phi-3-mini-4k-instruct",
     #     "target_modules": "all-linear"
     # }
-    main(**params)
+    main()
