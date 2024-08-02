@@ -2,7 +2,7 @@ from dataclasses import asdict
 
 from peft import LoraConfig
 
-from src.configs import datasets, lora_config, train_config
+from ..configs import datasets, lora_config, train_config
 
 
 def update_config(config, **kwargs):

@@ -4,7 +4,7 @@ from typing import List
 import torch
 from torch.utils.data import Dataset
 
-from src.prompt.templates.base import _PROMPT_PREFIX
+from ..prompt.templates.base import _PROMPT_PREFIX
 
 
 def pprint_data(data: List, k: int = 3, n: int = 5):
