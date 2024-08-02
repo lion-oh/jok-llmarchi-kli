@@ -92,8 +92,8 @@ def main(**kwargs):
     trainer.train()
 
 if __name__ == "__main__":
-    params = {
-        "model_id": "microsoft/Phi-3-mini-4k-instruct",
-        "target_modules": "all-linear"
-    }
+    # params = {
+    #     "model_id": "microsoft/Phi-3-mini-4k-instruct",
+    #     "target_modules": "all-linear"
+    # }
     main(**params)
