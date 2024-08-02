@@ -1,2 +1,2 @@
-from src.configs.peft import lora_config
-from src.configs.training import train_config
+from .peft import lora_config
+from .training import train_config
