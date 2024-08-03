@@ -61,7 +61,8 @@ def main(**kwargs):
         model.print_trainable_parameters()
 
     # 실험별 로그 저장 경로 생성
-    training_log = make_training_log(train_config, peft_config, quantization_config)
+    ROOT, training_details = make_training_log(train_config, peft_config, quantization_config)
+    training_log = ROOT + training_details
     writer = SummaryWriter(log_dir=training_log)
     tensorboard_callback = TensorBoardCallback(writer)
 
@@ -85,7 +86,7 @@ def main(**kwargs):
     data_collator = DataCollatorForSupervisedDataset(tokenizer=tokenizer)
 
     training_args = SFTConfig(
-        output_dir=train_config.save_dir,
+        output_dir= os.path.join(train_config.save_dir, training_details),
         overwrite_output_dir=True,
         do_train=True,
         do_eval=True,
