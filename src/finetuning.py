@@ -2,43 +2,54 @@ import os
 import sys
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 
-import torch
+from torch.utils.tensorboard import SummaryWriter
+from transformers.trainer_callback import TrainerCallback # peft의 경우 Trainer로 잘 저장이 안되는 이슈가 있음. // 최신버전에서는 없어졋난봄.
+from transformers.integrations import TensorBoardCallback
+import tensorboard
+
 from datasets import Dataset
 from transformers import (
     AutoModelForCausalLM, 
     AutoTokenizer,
-    BitsAndBytesConfig
 )
 
 from trl import SFTTrainer, SFTConfig
 from peft import LoraConfig, get_peft_model, TaskType
 
-from configs import train_config as TRAIN_CONFIG
+# from configs import train_config as TRAIN_CONFIG
+from configs import train_config_jh as TRAIN_CONFIG
 from configs.datasets import base_dataset as DATASET_CONFIG
-from data.dataloader import CustomDataset, DataCollatorForSupervisedDataset
-from utils.config_utils import (
-    update_config,
-    generate_peft_config
+from configs.quantization import quantization_config as QUANTIZATION_CONFIG
+
+from data.dataloader import (
+    CustomDataset, 
+    DataCollatorForSupervisedDataset
 )
 
+from utils.config_utils import (
+    update_config,
+    generate_peft_config,
+    generate_quantization_config,
+)
 
+from utils.general_utils import (
+    make_training_log
+)
+        
 
 def main(**kwargs):
     train_config = TRAIN_CONFIG()
+    quantization_config = QUANTIZATION_CONFIG()
     update_config(train_config, **kwargs)
-    
-    bnb_config = BitsAndBytesConfig(
-        load_in_4bit=True,
-        bnb_4bit_quant_type="nf4",
-        bnb_4bit_compute_dtype=torch.bfloat16
-    )
+
+    quantization_config_dict = generate_quantization_config(train_config, quantization_config)
 
     model = AutoModelForCausalLM.from_pretrained(
         train_config.model_id,
         # torch_dtype=torch.bfloat16,
         device_map="auto",
         cache_dir=train_config.cache_dir,
-        quantization_config=bnb_config,
+        **quantization_config_dict,
     )
 
     tokenizer = AutoTokenizer.from_pretrained(train_config.model_id if train_config.tokenizer is None else train_config.tokenizer)
@@ -48,6 +59,11 @@ def main(**kwargs):
         peft_config = generate_peft_config(train_config, kwargs)
         model = get_peft_model(model, peft_config)
         model.print_trainable_parameters()
+
+    # 실험별 로그 저장 경로 생성
+    training_log = make_training_log(train_config, peft_config, quantization_config)
+    writer = SummaryWriter(log_dir=training_log)
+    tensorboard_callback = TensorBoardCallback(writer)
 
     # 개인 환경에 맞게 경로 설정
     current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -92,6 +108,7 @@ def main(**kwargs):
         gradient_checkpointing_kwargs={"use_reentrant": False},
         max_seq_length=4096,  # 이슈
         packing=True,
+        report_to=["tensorboard"],
         seed=42,
     )
 
@@ -103,7 +120,8 @@ def main(**kwargs):
         eval_dataset=valid_dataset,
         data_collator=data_collator,
         args=training_args,
-        peft_config=peft_config
+        peft_config=peft_config,
+        callbacks=[tensorboard_callback],
     )
 
     trainer.train()
