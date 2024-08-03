@@ -20,9 +20,9 @@ class train_config:
 class train_config_jh:
     model_id: str="MLP-KTLim/llama-3-Korean-Bllossom-8B"
     tokenizer: str=None
-    save_dir: str="../baseline/resource/results/"
+    save_dir: str="./finetuned_model/"
     cache_dir: str="./models/"
-    tensorboard_log_path: str='../training_log/'
+    tensorboard_log_path: str='./training_log/'
     batch_size: int=1
     gradient_accumulation_steps: int=16
     warmup_steps: int=20
