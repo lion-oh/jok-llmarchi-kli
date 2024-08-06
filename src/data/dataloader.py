@@ -4,6 +4,7 @@ from typing import List
 import torch
 from torch.utils.data import Dataset
 
+from src.preprocess.base import remove_unnecessary_tokens
 from src.prompt.templates.base import _PROMPT_PREFIX
 
 
@@ -27,7 +28,7 @@ def pprint_data(data: List, k: int = 3, n: int = 5):
 
 
 class CustomDataset(Dataset):
-    def __init__(self, fname, tokenizer):
+    def __init__(self, fname, tokenizer=None):
         IGNORE_INDEX = -100
         self.inp = []
         self.label = []
@@ -37,7 +38,7 @@ class CustomDataset(Dataset):
         with open(fname, "r") as f:
             data = json.load(f)
 
-        def make_chat(inp):
+        def make_chat_old(inp):
             chat = ["[Conversation]"]
             for cvt in inp['conversation']:
                 speaker = cvt['speaker']
@@ -50,12 +51,47 @@ class CustomDataset(Dataset):
 
             return chat
 
+        def make_chat(inp):
+            chat = ["[Conversation]"]
+            isFirst = True
+            for cvt in inp['conversation']:
+                print(cvt)
+                new_speaker = cvt.get('speaker')
+                new_utterance = cvt.get('utterance')
+
+                if isFirst:
+                    speaker = new_speaker
+                    utterance = new_utterance
+                    isFirst = False
+                    continue
+
+                if new_speaker == speaker:
+                    utterance += " " + new_utterance
+
+                else:
+                    chat.append(f"화자{speaker}: {remove_unnecessary_tokens(utterance)}")
+                    speaker = new_speaker
+                    utterance = new_utterance
+
+            chat.append(f"화자{speaker}: {remove_unnecessary_tokens(utterance)}")
+            chat = "\n".join(chat)
+            keyword = ', '.join(inp['subject_keyword'])
+            question = f"[Question]\n위 {keyword} 주제에 대한 대화를 요약해주세요."
+            chat = chat + "\n\n" + question
+
+            return chat
+
+
         for example in data:
             chat = make_chat(example["input"])
             message = [
                 {"role": "system", "content": PROMPT},
                 {"role": "user", "content": chat},
             ]
+
+            if not tokenizer:
+                print(message)
+                raise ValueError("tokenizer를 설정해주세요.")
 
             source = tokenizer.apply_chat_template(
                 message,
@@ -103,9 +139,12 @@ class DataCollatorForSupervisedDataset(object):
 
 
 if __name__ == "__main__":
+    import os
+    from src.configs.datasets import base_dataset as DATASET_CONFIG
     '''Print Sample Data'''
-    fileName = 'sample.json'
-    PATH = f'../../baseline/resource/data/{fileName}'
-    with open(PATH, "r") as file:
-        data = json.load(file)
-    pprint_data(data)
+    train_dataset = CustomDataset(DATASET_CONFIG.train_split)
+    # fileName = 'sample.json'
+    # PATH = f'../../baseline/resource/data/{fileName}'
+    # with open(PATH, "r") as file:
+    #     data = json.load(file)
+    # pprint_data(data)
