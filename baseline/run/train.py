@@ -8,8 +8,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 from trl import SFTTrainer, SFTConfig
 from peft import LoraConfig, get_peft_model, TaskType
 
-from baseline.src.dataloader import CustomDataset, DataCollatorForSupervisedDataset
-
+from baseline.src.data import CustomDataset, DataCollatorForSupervisedDataset
 
 
 def load_config(config_path):
