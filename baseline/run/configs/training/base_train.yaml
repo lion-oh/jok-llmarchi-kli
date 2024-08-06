@@ -1,0 +1,23 @@
+model:
+  model_id: "MLP-KTLim/llama-3-Korean-Bllossom-8B"
+  tokenizer: "MLP-KTLim/llama-3-Korean-Bllossom-8B"
+  save_dir: "resource/results"
+
+training:
+  batch_size: 1
+  gradient_accumulation_steps: 64
+  warmup_steps: 20
+  lr: 2e-5
+  epoch: 5
+
+data:
+  train_file: "resource/dataset/일상대화요약_train.json"
+  valid_file: "resource/dataset/일상대화요약_dev.json"
+
+lora_config:
+  r: 16
+  lora_alpha: 32
+  target_modules: ["q_proj", "v_proj"]
+  lora_dropout: 0.05
+  bias: "none"
+  task_type: "CAUSAL_LM"
