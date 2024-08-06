@@ -4,3 +4,6 @@ peft==0.11.1
 trl==0.9.4
 datasets
 numpy
+bitsandbytes==0.43.3
+tensorboard==2.14.0
+tensorboard-data-server==0.7.2
