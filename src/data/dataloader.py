@@ -4,7 +4,7 @@ from typing import List
 import torch
 from torch.utils.data import Dataset
 
-from src.prompt.templates.base import _PROMPT_PREFIX
+from src.prompt.templates.base import _PROMPT_PREFIX, _PROMPT_SUFFIX
 
 
 def pprint_data(data: List, k: int = 3, n: int = 5):
@@ -45,7 +45,7 @@ class CustomDataset(Dataset):
                 chat.append(f"화자{speaker}: {utterance}")
             chat = "\n".join(chat)
             keyword = ', '.join(inp['subject_keyword'])
-            question = f"[Question]\n위 {keyword} 주제에 대한 대화를 요약해주세요."
+            question = _PROMPT_SUFFIX.format(keyword)
             chat = chat + "\n\n" + question
 
             return chat
