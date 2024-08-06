@@ -8,7 +8,7 @@ class train_config:
     save_dir: str="../baseline/resource/results/"
     cache_dir: str="./models/"
     batch_size: int=1
-    gradient_accumulation_steps: int=64
+    gradient_accumulation_steps: int=8
     lr: float=2e-5
     epoch: int=5
     peft_method: str="lora"
