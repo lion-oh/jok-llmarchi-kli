@@ -1,9 +1,8 @@
 from dataclasses import asdict
-
+from transformers import BitsAndBytesConfig
+import torch
 from peft import LoraConfig
-
 from src.configs import datasets, lora_config, train_config
-
 
 def update_config(config, **kwargs):
     if isinstance(config, (tuple, list)):
@@ -39,3 +38,17 @@ def generate_peft_config(train_config, kwargs):
     peft_config = peft_configs[names.index(train_config.peft_method)](**params)
 
     return peft_config
+
+
+def generate_quantization_config(train_config, quantization_args):
+    quantization_args = asdict(quantization_args)
+    if train_config.use_quantization:
+        bnb_config = BitsAndBytesConfig(
+            **quantization_args
+        )
+        quantization_config = {'quantization_config':bnb_config}
+    else:
+        quantization_config = {}
+
+    return quantization_config
+
