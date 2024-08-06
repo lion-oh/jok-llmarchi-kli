@@ -55,7 +55,6 @@ class CustomDataset(Dataset):
             chat = ["[Conversation]"]
             isFirst = True
             for cvt in inp['conversation']:
-                print(cvt)
                 new_speaker = cvt.get('speaker')
                 new_utterance = cvt.get('utterance')
 
@@ -139,8 +138,8 @@ class DataCollatorForSupervisedDataset(object):
 
 
 if __name__ == "__main__":
-    import os
     from src.configs.datasets import base_dataset as DATASET_CONFIG
+
     '''Print Sample Data'''
     train_dataset = CustomDataset(DATASET_CONFIG.train_split)
     # fileName = 'sample.json'
