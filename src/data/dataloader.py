@@ -37,13 +37,31 @@ class CustomDataset(Dataset):
         with open(fname, "r") as f:
             data = json.load(f)
 
+        # 화자 중복제거, 대화 앞뒤로 [Conversation], [Question] 붙이기
         def make_chat(inp):
-            chat = ["[Conversation]"]
+            chat = []
+            current_chat = []
+            current_speaker = None
+            current_utterance = ''
+            
             for cvt in inp['conversation']:
                 speaker = cvt['speaker']
                 utterance = cvt['utterance']
-                chat.append(f"화자{speaker}: {utterance}")
-            chat = "\n".join(chat)
+                
+                if speaker == current_speaker:
+                    current_utterance += ' ' + utterance
+                
+                else:
+                    if current_speaker is not None:
+                        current_chat.append(f'화자{current_speaker}: {current_utterance}')
+                    current_speaker = speaker
+                    current_utterance = utterance
+                    
+            if current_utterance:
+                current_chat.append(f'화자{current_speaker}: {current_utterance}')
+
+            chat = '\n'.join(current_chat)
+            chat = '[Conversation]\n' + chat
             keyword = ', '.join(inp['subject_keyword'])
             question = f"[Question]\n위 {keyword} 주제에 대한 대화를 요약해주세요."
             chat = chat + "\n\n" + question
