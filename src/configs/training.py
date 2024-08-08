@@ -24,7 +24,7 @@ class train_config_jh:
     cache_dir: str="./models/"
     tensorboard_log_path: str='./training_log/'
     batch_size: int=1
-    gradient_accumulation_steps: int=16
+    gradient_accumulation_steps: int=8
     warmup_steps: int=20
     lr: float=2e-5
     epoch: int=10
