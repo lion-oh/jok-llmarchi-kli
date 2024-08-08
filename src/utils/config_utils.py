@@ -46,7 +46,7 @@ def generate_quantization_config(train_config, quantization_args):
         bnb_config = BitsAndBytesConfig(
             **quantization_args
         )
-        quantization_config = {'quantization_config':bnb_config}
+        quantization_config = {'quantization_config': bnb_config}
     else:
         quantization_config = {}
 
