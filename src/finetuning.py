@@ -35,7 +35,8 @@ from utils.config_utils import (
 from utils.general_utils import (
     make_training_log
 )
-        
+
+from grokfast_pytorch.grokfast import GrokFastAdamW
 
 def main(**kwargs):
     train_config = TRAIN_CONFIG()
@@ -113,6 +114,12 @@ def main(**kwargs):
         seed=42,
     )
 
+    ## optimizer
+    if train_config.use_grokfast:
+        optimizer_args = {"optimizers" : (GrokFastAdamW(model.parameters()), None)}
+    else:
+        optimizer_args = {}
+
     # LOAD TRAINER
     trainer = SFTTrainer(
         model=model,
@@ -123,6 +130,7 @@ def main(**kwargs):
         args=training_args,
         peft_config=peft_config,
         callbacks=[tensorboard_callback],
+        **optimizer_args
     )
 
     trainer.train()
@@ -132,4 +140,5 @@ if __name__ == "__main__":
     #     "model_id": "microsoft/Phi-3-mini-4k-instruct",
     #     "target_modules": "all-linear"
     # }
+
     main()
