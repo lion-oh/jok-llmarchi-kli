@@ -1,3 +1,6 @@
+import os
+import sys
+sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 
 import fire
 
@@ -26,7 +29,7 @@ def main(**kwargs):
         torch.cuda.manual_seed(infer_config.seed)
     torch.manual_seed(infer_config.seed)
 
-    model = load_model(infer_config.model_id, infer_config.quantization, **kwargs)
+    model = load_model(infer_config.model_id, infer_config.quantization, infer_config.cache_dir, **kwargs)
     if infer_config.peft_id:
         model = load_peft_model(model, infer_config.peft_id)
 

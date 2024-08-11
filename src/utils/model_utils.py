@@ -7,7 +7,7 @@ from .config_utils import update_config, generate_quantization_config
 from src.configs.quantization import quantization_config as QUANTIZATION_CONFIG
 
 # Function to load the main model for text generation
-def load_model(model_name, quantization, **kwargs):
+def load_model(model_name, quantization, cache_dir, **kwargs):
     if type(quantization) == type(True):
         warn("Quantization (--quantization) is a boolean, please specify quantization as '4bit' or '8bit'. Defaulting to '8bit' but this might change in the future.", FutureWarning)
         quantization = "4bit"
@@ -22,6 +22,7 @@ def load_model(model_name, quantization, **kwargs):
         kwargs.update(bnb_config)
 
     kwargs["device_map"]="auto"
+    kwargs["cache_dir"]=cache_dir
     model = AutoModelForCausalLM.from_pretrained(
         model_name,
         return_dict=True,
