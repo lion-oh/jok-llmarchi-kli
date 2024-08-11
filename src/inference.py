@@ -15,12 +15,14 @@ from configs.inference import infer_config as INFER_CONFIG
 from configs.datasets import base_dataset as DATASET_CONFIG
 from data.dataloader import CustomDataset
 from utils.model_utils import load_model, load_peft_model
+from utils.config_utils import update_config
 
 
 
 
 def main(**kwargs):
     infer_config = INFER_CONFIG()
+    update_config(infer_config, **kwargs)
 
     # Set the seeds for reproducibility
     if is_xpu_available():
