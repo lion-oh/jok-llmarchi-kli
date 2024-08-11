@@ -36,7 +36,7 @@ def main(**kwargs):
         model = load_peft_model(model, infer_config.peft_id)
 
     model.eval()
-
+    print(model)
     tokenizer = AutoTokenizer.from_pretrained(infer_config.model_id if infer_config.tokenizer is None else infer_config.tokenizer)
     tokenizer.pad_token = tokenizer.eos_token
     terminators = [
