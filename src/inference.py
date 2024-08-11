@@ -67,4 +67,7 @@ def main(**kwargs):
 
 
 if __name__ == "__main__":
+    """flag를 이용한 inference.py 실행 예제
+    !python jok-llmarchi-kli/src/inference.py --quantization "4bit" --peft_id "./resource/lora_results/base/"
+    """
     fire.Fire(main)
