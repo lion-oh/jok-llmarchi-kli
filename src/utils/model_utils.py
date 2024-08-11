@@ -7,7 +7,7 @@ from .config_utils import update_config, generate_quantization_config
 from src.configs.quantization import quantization_config as QUANTIZATION_CONFIG
 
 # Function to load the main model for text generation
-def load_model(model_name, quantization, cache_dir, **kwargs):
+def load_model(model_name, quantization, cache_dir):
     if type(quantization) == type(True):
         warn("Quantization (--quantization) is a boolean, please specify quantization as '4bit' or '8bit'. Defaulting to '8bit' but this might change in the future.", FutureWarning)
         quantization = "4bit"

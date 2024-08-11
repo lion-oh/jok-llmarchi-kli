@@ -1,12 +1,10 @@
 import os
 import sys
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
+import json
 
 import fire
-
-import json
 import tqdm
-
 import torch
 from accelerate.utils import is_xpu_available
 from transformers import AutoTokenizer
@@ -16,8 +14,6 @@ from configs.datasets import base_dataset as DATASET_CONFIG
 from data.dataloader import CustomDataset
 from utils.model_utils import load_model, load_peft_model
 from utils.config_utils import update_config
-
-
 
 
 def main(**kwargs):
@@ -31,12 +27,13 @@ def main(**kwargs):
         torch.cuda.manual_seed(infer_config.seed)
     torch.manual_seed(infer_config.seed)
 
-    model = load_model(infer_config.model_id, infer_config.quantization, infer_config.cache_dir, **kwargs)
+    model = load_model(infer_config.model_id, infer_config.quantization, infer_config.cache_dir)
     if infer_config.peft_id:
+        print("Loading peft...")
         model = load_peft_model(model, infer_config.peft_id)
 
     model.eval()
-    print(model)
+
     tokenizer = AutoTokenizer.from_pretrained(infer_config.model_id if infer_config.tokenizer is None else infer_config.tokenizer)
     tokenizer.pad_token = tokenizer.eos_token
     terminators = [
@@ -48,10 +45,15 @@ def main(**kwargs):
     with open(DATASET_CONFIG.test_split, "r") as f:
         result = json.load(f)
 
+    if torch.cuda.is_available():
+        device = "cuda"
+    else:
+        device = "cpu"
+
     for idx in tqdm.tqdm(range(len(dataset))):
         inp = dataset[idx]
         outputs = model.generate(
-            inp.to("cuda").unsqueeze(0),
+            inp.to(device).unsqueeze(0),
             max_new_tokens=1024,
             eos_token_id=terminators,
             pad_token_id=tokenizer.eos_token_id,
@@ -65,4 +67,4 @@ def main(**kwargs):
 
 
 if __name__ == "__main__":
-    fire.Fire(main())
+    fire.Fire(main)
