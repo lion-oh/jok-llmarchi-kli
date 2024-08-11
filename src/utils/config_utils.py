@@ -40,15 +40,11 @@ def generate_peft_config(train_config, kwargs):
     return peft_config
 
 
-def generate_quantization_config(train_config, quantization_args):
+def generate_quantization_config(quantization_args):
     quantization_args = asdict(quantization_args)
-    if train_config.use_quantization:
-        bnb_config = BitsAndBytesConfig(
-            **quantization_args
-        )
-        quantization_config = {'quantization_config': bnb_config}
-    else:
-        quantization_config = {}
-
+    bnb_config = BitsAndBytesConfig(
+        **quantization_args
+    )
+    quantization_config = {'quantization_config': bnb_config}
     return quantization_config
 

@@ -42,7 +42,9 @@ def main(**kwargs):
     quantization_config = QUANTIZATION_CONFIG()
     update_config(train_config, **kwargs)
 
-    quantization_config_dict = generate_quantization_config(train_config, quantization_config)
+    quantization_config_dict={}
+    if train_config.use_quantization:
+        quantization_config_dict = generate_quantization_config(quantization_config)
 
     model = AutoModelForCausalLM.from_pretrained(
         train_config.model_id,
