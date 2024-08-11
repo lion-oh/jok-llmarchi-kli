@@ -127,8 +127,7 @@ def main(**kwargs):
     trainer.train()
 
 if __name__ == "__main__":
-    # params = {
-    #     "model_id": "microsoft/Phi-3-mini-4k-instruct",
-    #     "target_modules": "all-linear"
-    # }
+    """flag를 이용한 finetuning.py 실행 예제
+    !python jok-llmarchi-kli/src/finetuning.py --gradient_accumulation_steps 8
+    """
     fire.Fire(main)
