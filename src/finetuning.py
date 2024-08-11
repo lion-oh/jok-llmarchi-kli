@@ -2,6 +2,8 @@ import os
 import sys
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 
+import fire
+
 from torch.utils.tensorboard import SummaryWriter
 from transformers.trainer_callback import TrainerCallback # peft의 경우 Trainer로 잘 저장이 안되는 이슈가 있음. // 최신버전에서는 없어졋난봄.
 from transformers.integrations import TensorBoardCallback
@@ -68,11 +70,6 @@ def main(**kwargs):
     writer = SummaryWriter(log_dir=training_log)
     tensorboard_callback = TensorBoardCallback(writer)
 
-    # 개인 환경에 맞게 경로 설정
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    DATASET_CONFIG.train_split = os.path.join(current_dir, DATASET_CONFIG.train_split)
-    DATASET_CONFIG.valid_split = os.path.join(current_dir, DATASET_CONFIG.valid_split)
-
     train_dataset = CustomDataset(DATASET_CONFIG.train_split, tokenizer)
     valid_dataset = CustomDataset(DATASET_CONFIG.valid_split, tokenizer)
 
@@ -134,4 +131,4 @@ if __name__ == "__main__":
     #     "model_id": "microsoft/Phi-3-mini-4k-instruct",
     #     "target_modules": "all-linear"
     # }
-    main()
+    fire.Fire(main)
