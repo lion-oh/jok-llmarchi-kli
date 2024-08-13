@@ -38,18 +38,18 @@ class CustomDataset(Dataset):
         with open(fname, "r") as f:
             data = json.load(f)
 
-        # def make_chat_old(inp):
-        #     chat = ["[Conversation]"]
-        #     for cvt in inp['conversation']:
-        #         speaker = cvt['speaker']
-        #         utterance = cvt['utterance']
-        #         chat.append(f"화자{speaker}: {utterance}")
-        #     chat = "\n".join(chat)
-        #     keyword = ', '.join(inp['subject_keyword'])
-        #     question = f"[Question]\n위 {keyword} 주제에 대한 대화를 요약해주세요."
-        #     chat = chat + "\n\n" + question
-        #
-        #     return chat
+        def make_chat_old(inp):
+            chat = ["[Conversation]"]
+            for cvt in inp['conversation']:
+                speaker = cvt['speaker']
+                utterance = cvt['utterance']
+                chat.append(f"화자{speaker}: {utterance}")
+            chat = "\n".join(chat)
+            keyword = ', '.join(inp['subject_keyword'])
+            question = f"[Question]\n위 {keyword} 주제에 대한 대화를 요약해주세요."
+            chat = chat + "\n\n" + question
+
+            return chat
 
         def make_chat(inp):
             chat = ["[Conversation]"]
@@ -82,7 +82,7 @@ class CustomDataset(Dataset):
 
 
         for example in data:
-            chat = make_chat(example["input"])
+            chat = make_chat_old(example["input"])
             message = [
                 {"role": "system", "content": PROMPT},
                 {"role": "user", "content": chat},
