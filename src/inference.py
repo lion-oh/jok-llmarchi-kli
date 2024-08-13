@@ -58,6 +58,7 @@ def main(**kwargs):
             eos_token_id=terminators,
             pad_token_id=tokenizer.eos_token_id,
             do_sample=False,
+            **kwargs
         )
 
         result[idx]["output"] = tokenizer.decode(outputs[0][inp.shape[-1]:], skip_special_tokens=True)
