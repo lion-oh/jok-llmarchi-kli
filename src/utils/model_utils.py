@@ -23,9 +23,12 @@ def load_model(model_name, quantization, cache_dir):
 
     kwargs["device_map"]="auto"
     kwargs["cache_dir"]=cache_dir
+    print("model_name", model_name)
+    print("kwargs", kwargs)
+    
     model = AutoModelForCausalLM.from_pretrained(
         model_name,
-        return_dict=True,
+        return_dict=False,
         **kwargs
     )
     return model
