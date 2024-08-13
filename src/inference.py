@@ -58,7 +58,8 @@ def main(**kwargs):
             eos_token_id=terminators,
             pad_token_id=tokenizer.eos_token_id,
             do_sample=False,
-            **kwargs
+            temperature=kwargs.get('temperature', 0),
+            top_p=kwargs.get('top_p', 1)
         )
 
         result[idx]["output"] = tokenizer.decode(outputs[0][inp.shape[-1]:], skip_special_tokens=True)
