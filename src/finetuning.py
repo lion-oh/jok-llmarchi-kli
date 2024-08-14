@@ -2,10 +2,8 @@ import os
 import sys
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 
-from torch.utils.tensorboard import SummaryWriter
-from transformers.trainer_callback import TrainerCallback # peft의 경우 Trainer로 잘 저장이 안되는 이슈가 있음. // 최신버전에서는 없어졋난봄.
-from transformers.integrations import TensorBoardCallback
-import tensorboard
+import fire
+import torch
 
 from datasets import Dataset
 from transformers import (
@@ -16,8 +14,8 @@ from transformers import (
 from trl import SFTTrainer, SFTConfig
 from peft import LoraConfig, get_peft_model, TaskType
 
-# from configs import train_config as TRAIN_CONFIG
-from configs import train_config_jh as TRAIN_CONFIG
+from configs import train_config as TRAIN_CONFIG
+# from configs import train_config_jh as TRAIN_CONFIG
 from configs.datasets import base_dataset as DATASET_CONFIG
 from configs.quantization import quantization_config as QUANTIZATION_CONFIG
 
@@ -32,24 +30,21 @@ from utils.config_utils import (
     generate_quantization_config,
 )
 
-from utils.general_utils import (
-    make_training_log
-)
-        
+
 
 def main(**kwargs):
     train_config = TRAIN_CONFIG()
-    quantization_config = QUANTIZATION_CONFIG()
+    # quantization_config = QUANTIZATION_CONFIG()
     update_config(train_config, **kwargs)
 
-    quantization_config_dict = generate_quantization_config(train_config, quantization_config)
+    # quantization_config_dict = generate_quantization_config(train_config, quantization_config)
 
     model = AutoModelForCausalLM.from_pretrained(
         train_config.model_id,
-        # torch_dtype=torch.bfloat16,
+        torch_dtype=torch.bfloat16,
         device_map="auto",
         cache_dir=train_config.cache_dir,
-        **quantization_config_dict,
+        # **quantization_config_dict,
     )
 
     tokenizer = AutoTokenizer.from_pretrained(train_config.model_id if train_config.tokenizer is None else train_config.tokenizer)
@@ -61,10 +56,10 @@ def main(**kwargs):
         model.print_trainable_parameters()
 
     # 실험별 로그 저장 경로 생성
-    ROOT, training_details = make_training_log(train_config, peft_config, quantization_config)
-    training_log = ROOT + training_details
-    writer = SummaryWriter(log_dir=training_log)
-    tensorboard_callback = TensorBoardCallback(writer)
+    # ROOT, training_details = make_training_log(train_config, peft_config, quantization_config)
+    # training_log = ROOT + training_details
+    # writer = SummaryWriter(log_dir=training_log)
+    # tensorboard_callback = TensorBoardCallback(writer)
 
     # 개인 환경에 맞게 경로 설정
     current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -86,7 +81,7 @@ def main(**kwargs):
     data_collator = DataCollatorForSupervisedDataset(tokenizer=tokenizer)
 
     training_args = SFTConfig(
-        output_dir= os.path.join(train_config.save_dir, training_details),
+        output_dir= os.path.join(train_config.save_dir),
         overwrite_output_dir=True,
         do_train=True,
         do_eval=True,
@@ -100,16 +95,16 @@ def main(**kwargs):
         max_steps=-1,
         lr_scheduler_type="cosine",
         warmup_steps=train_config.warmup_steps,
-        log_level="info",
-        logging_steps=1,
+        # log_level="info",
+        # logging_steps=1,
         save_strategy="epoch",
         save_total_limit=5,
         bf16=True,  # CUDA 환경에서만 가능.
-        gradient_checkpointing=True,
-        gradient_checkpointing_kwargs={"use_reentrant": False},
-        max_seq_length=4096,  # 이슈
+        # gradient_checkpointing=True,
+        # gradient_checkpointing_kwargs={"use_reentrant": False},
+        max_seq_length=4096,
         packing=True,
-        report_to=["tensorboard"],
+        # report_to=["tensorboard"],
         seed=42,
     )
 
@@ -122,7 +117,6 @@ def main(**kwargs):
         data_collator=data_collator,
         args=training_args,
         peft_config=peft_config,
-        callbacks=[tensorboard_callback],
     )
 
     trainer.train()
@@ -132,4 +126,4 @@ if __name__ == "__main__":
     #     "model_id": "microsoft/Phi-3-mini-4k-instruct",
     #     "target_modules": "all-linear"
     # }
-    main()
+    fire.Fire(main)
