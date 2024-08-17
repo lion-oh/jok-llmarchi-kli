@@ -4,8 +4,8 @@ from typing import List
 import torch
 from torch.utils.data import Dataset
 
-from src.prompt.templates.base import _PROMPT_PREFIX
-
+from src.prompt.templates.base import _PROMPT_PREFIX, _PROMPT_SUFFIX
+from src.preprocess.base import prep_main
 
 def pprint_data(data: List, k: int = 3, n: int = 5):
     data = data[:k]
@@ -27,7 +27,7 @@ def pprint_data(data: List, k: int = 3, n: int = 5):
 
 
 class CustomDataset(Dataset):
-    def __init__(self, fname, tokenizer):
+    def __init__(self, fname, chatType='v1', tokenizer=None):
         IGNORE_INDEX = -100
         self.inp = []
         self.label = []
@@ -36,6 +36,19 @@ class CustomDataset(Dataset):
 
         with open(fname, "r") as f:
             data = json.load(f)
+
+        def make_chat_old(inp):
+            chat = ["[Conversation]"]
+            for cvt in inp['conversation']:
+                speaker = cvt['speaker']
+                utterance = cvt['utterance']
+                chat.append(f"화자{speaker}: {utterance}")
+            chat = "\n".join(chat)
+            keyword = ', '.join(inp['subject_keyword'])
+            question = f"[Question]\n위 {keyword} 주제에 대한 대화를 요약해주세요."
+            chat = chat + "\n\n" + question
+
+            return chat
 
         # 화자 중복제거, 대화 앞뒤로 [Conversation], [Question] 붙이기
         def make_chat(inp):
@@ -47,7 +60,10 @@ class CustomDataset(Dataset):
             for cvt in inp['conversation']:
                 speaker = cvt['speaker']
                 utterance = cvt['utterance']
-                
+
+                cleaned_utterance = prep_main(utterance)
+                utterance = cleaned_utterance
+
                 if speaker == current_speaker:
                     current_utterance += ' ' + utterance
                 
@@ -63,13 +79,16 @@ class CustomDataset(Dataset):
             chat = '\n'.join(current_chat)
             chat = '[Conversation]\n' + chat
             keyword = ', '.join(inp['subject_keyword'])
-            question = f"[Question]\n위 {keyword} 주제에 대한 대화를 요약해주세요."
+            question = _PROMPT_SUFFIX.format(keyword=keyword)
             chat = chat + "\n\n" + question
 
             return chat
 
         for example in data:
-            chat = make_chat(example["input"])
+            if chatType == 'ori':
+                chat = make_chat_old(example["input"])
+            elif chatType == 'v1':
+                chat = make_chat(example["input"])
             message = [
                 {"role": "system", "content": PROMPT},
                 {"role": "user", "content": chat},
@@ -121,9 +140,13 @@ class DataCollatorForSupervisedDataset(object):
 
 
 if __name__ == "__main__":
+    from src.configs.datasets import base_dataset as DATASET_CONFIG
+
     '''Print Sample Data'''
-    fileName = 'sample.json'
-    PATH = f'../../baseline/resource/data/{fileName}'
-    with open(PATH, "r") as file:
-        data = json.load(file)
-    pprint_data(data)
+    train_dataset = CustomDataset(DATASET_CONFIG.train_split, chatType='v1')
+    # '''Print Sample Data'''
+    # fileName = 'sample.json'
+    # PATH = f'../../baseline/resource/data/{fileName}'
+    # with open(PATH, "r") as file:
+    #     data = json.load(file)
+    # pprint_data(data)

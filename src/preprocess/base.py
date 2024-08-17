@@ -73,6 +73,13 @@ def remove_special_characters(text, keep_chars=None):
 
     return cleaned_text
 
+# 전처리 통합 적용하는 코드
+def prep_main(text):
+    cleaned_text1 = remove_unnecessary_tokens(text)
+    cleaned_text2 = remove_recommendation(cleaned_text1)
+    cleaned_text3 = remove_special_characters(cleaned_text2)
+    return cleaned_text3
+
 # 테스트 코드는 그대로 유지
 
 if __name__ == "__main__":
