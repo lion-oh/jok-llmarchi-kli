@@ -4,7 +4,7 @@ from typing import List
 import torch
 from torch.utils.data import Dataset
 
-from src.prompt.templates.base import _PROMPT_PREFIX, _PROMPT_SUFFIX
+from src.prompt.templates.base import _PROMPT_PREFIX, _PROMPT_SUFFIX, DEFAULT_PROMPT
 from src.preprocess.base import prep_main
 
 def pprint_data(data: List, k: int = 3, n: int = 5):
@@ -32,7 +32,7 @@ class CustomDataset(Dataset):
         self.inp = []
         self.label = []
 
-        PROMPT = _PROMPT_PREFIX
+        PROMPT = _PROMPT_PREFIX + DEFAULT_PROMPT
 
         with open(fname, "r") as f:
             data = json.load(f)
@@ -143,7 +143,7 @@ if __name__ == "__main__":
     from src.configs.datasets import base_dataset as DATASET_CONFIG
 
     '''Print Sample Data'''
-    train_dataset = CustomDataset(DATASET_CONFIG.train_split, chatType='v1')
+    train_dataset = CustomDataset(DATASET_CONFIG.train_split, chatType='ori')
     # '''Print Sample Data'''
     # fileName = 'sample.json'
     # PATH = f'../../baseline/resource/data/{fileName}'
