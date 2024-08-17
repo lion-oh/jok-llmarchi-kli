@@ -60,6 +60,7 @@ def main(**kwargs):
     tokenizer = AutoTokenizer.from_pretrained(train_config.model_id if train_config.tokenizer is None else train_config.tokenizer)
     tokenizer.pad_token = tokenizer.eos_token
 
+    peft_config={}
     if train_config.use_peft:
         peft_config = generate_peft_config(train_config, kwargs)
         model = get_peft_model(model, peft_config)
