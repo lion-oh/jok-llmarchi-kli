@@ -2,6 +2,8 @@ import os
 import sys
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 
+import fire
+
 from torch.utils.tensorboard import SummaryWriter
 from transformers.trainer_callback import TrainerCallback # peft의 경우 Trainer로 잘 저장이 안되는 이슈가 있음. // 최신버전에서는 없어졋난봄.
 from transformers.integrations import TensorBoardCallback
@@ -42,7 +44,9 @@ def main(**kwargs):
     quantization_config = QUANTIZATION_CONFIG()
     update_config(train_config, **kwargs)
 
-    quantization_config_dict = generate_quantization_config(train_config, quantization_config)
+    quantization_config_dict={}
+    if train_config.use_quantization:
+        quantization_config_dict = generate_quantization_config(quantization_config)
 
     model = AutoModelForCausalLM.from_pretrained(
         train_config.model_id,
@@ -65,11 +69,6 @@ def main(**kwargs):
     training_log = ROOT + training_details
     writer = SummaryWriter(log_dir=training_log)
     tensorboard_callback = TensorBoardCallback(writer)
-
-    # 개인 환경에 맞게 경로 설정
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    DATASET_CONFIG.train_split = os.path.join(current_dir, DATASET_CONFIG.train_split)
-    DATASET_CONFIG.valid_split = os.path.join(current_dir, DATASET_CONFIG.valid_split)
 
     train_dataset = CustomDataset(DATASET_CONFIG.train_split, tokenizer)
     valid_dataset = CustomDataset(DATASET_CONFIG.valid_split, tokenizer)
@@ -128,8 +127,7 @@ def main(**kwargs):
     trainer.train()
 
 if __name__ == "__main__":
-    # params = {
-    #     "model_id": "microsoft/Phi-3-mini-4k-instruct",
-    #     "target_modules": "all-linear"
-    # }
-    main()
+    """flag를 이용한 finetuning.py 실행 예제
+    !python jok-llmarchi-kli/src/finetuning.py --gradient_accumulation_steps 8
+    """
+    fire.Fire(main)

@@ -7,3 +7,4 @@ numpy
 bitsandbytes==0.43.3
 tensorboard==2.14.0
 tensorboard-data-server==0.7.2
+fire
