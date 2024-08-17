@@ -23,7 +23,7 @@ from configs import train_config_jh as TRAIN_CONFIG
 from configs.datasets import base_dataset as DATASET_CONFIG
 from configs.quantization import quantization_config as QUANTIZATION_CONFIG
 
-from data.dataloader import (
+from src.data.dataloader import (
     CustomDataset, 
     DataCollatorForSupervisedDataset
 )
@@ -70,8 +70,8 @@ def main(**kwargs):
     writer = SummaryWriter(log_dir=training_log)
     tensorboard_callback = TensorBoardCallback(writer)
 
-    train_dataset = CustomDataset(DATASET_CONFIG.train_split, tokenizer)
-    valid_dataset = CustomDataset(DATASET_CONFIG.valid_split, tokenizer)
+    train_dataset = CustomDataset(DATASET_CONFIG.train_split, tokenizer=tokenizer, chatType='v1')
+    valid_dataset = CustomDataset(DATASET_CONFIG.valid_split, tokenizer=tokenizer, chatType='v1')
 
     train_dataset = Dataset.from_dict({
         'input_ids': train_dataset.inp,

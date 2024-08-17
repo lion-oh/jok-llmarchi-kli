@@ -27,7 +27,7 @@ def pprint_data(data: List, k: int = 3, n: int = 5):
 
 
 class CustomDataset(Dataset):
-    def __init__(self, fname, chatType='v1', tokenizer=None):
+    def __init__(self, fname, tokenizer=None, chatType='v1'):
         IGNORE_INDEX = -100
         self.inp = []
         self.label = []
