@@ -41,7 +41,7 @@ def main(**kwargs):
         tokenizer.convert_tokens_to_ids("<|eot_id|>")
     ]
 
-    dataset = CustomDataset(DATASET_CONFIG.test_split, tokenizer)
+    dataset = CustomDataset(DATASET_CONFIG.test_split, tokenizer=tokenizer, chatType='v1')
     with open(DATASET_CONFIG.test_split, "r") as f:
         result = json.load(f)
 

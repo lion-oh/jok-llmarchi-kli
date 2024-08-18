@@ -4,6 +4,7 @@ sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 
 import fire
 
+import torch
 from torch.utils.tensorboard import SummaryWriter
 from transformers.trainer_callback import TrainerCallback # peft의 경우 Trainer로 잘 저장이 안되는 이슈가 있음. // 최신버전에서는 없어졋난봄.
 from transformers.integrations import TensorBoardCallback
@@ -23,7 +24,7 @@ from configs import train_config_jh as TRAIN_CONFIG
 from configs.datasets import base_dataset as DATASET_CONFIG
 from configs.quantization import quantization_config as QUANTIZATION_CONFIG
 
-from data.dataloader import (
+from src.data.dataloader import (
     CustomDataset, 
     DataCollatorForSupervisedDataset
 )
@@ -50,7 +51,7 @@ def main(**kwargs):
 
     model = AutoModelForCausalLM.from_pretrained(
         train_config.model_id,
-        # torch_dtype=torch.bfloat16,
+        torch_dtype=torch.bfloat16,
         device_map="auto",
         cache_dir=train_config.cache_dir,
         **quantization_config_dict,
@@ -59,19 +60,20 @@ def main(**kwargs):
     tokenizer = AutoTokenizer.from_pretrained(train_config.model_id if train_config.tokenizer is None else train_config.tokenizer)
     tokenizer.pad_token = tokenizer.eos_token
 
+    peft_config=None
     if train_config.use_peft:
         peft_config = generate_peft_config(train_config, kwargs)
         model = get_peft_model(model, peft_config)
         model.print_trainable_parameters()
 
     # 실험별 로그 저장 경로 생성
-    ROOT, training_details = make_training_log(train_config, peft_config, quantization_config)
-    training_log = ROOT + training_details
-    writer = SummaryWriter(log_dir=training_log)
-    tensorboard_callback = TensorBoardCallback(writer)
+    # ROOT, training_details = make_training_log(train_config, peft_config, quantization_config)
+    # training_log = ROOT + training_details
+    # writer = SummaryWriter(log_dir=training_log)
+    # tensorboard_callback = TensorBoardCallback(writer)
 
-    train_dataset = CustomDataset(DATASET_CONFIG.train_split, tokenizer)
-    valid_dataset = CustomDataset(DATASET_CONFIG.valid_split, tokenizer)
+    train_dataset = CustomDataset(DATASET_CONFIG.train_split, tokenizer=tokenizer, chatType='v1')
+    valid_dataset = CustomDataset(DATASET_CONFIG.valid_split, tokenizer=tokenizer, chatType='v1')
 
     train_dataset = Dataset.from_dict({
         'input_ids': train_dataset.inp,
@@ -85,7 +87,7 @@ def main(**kwargs):
     data_collator = DataCollatorForSupervisedDataset(tokenizer=tokenizer)
 
     training_args = SFTConfig(
-        output_dir= os.path.join(train_config.save_dir, training_details),
+        output_dir=train_config.save_dir,
         overwrite_output_dir=True,
         do_train=True,
         do_eval=True,
@@ -108,7 +110,7 @@ def main(**kwargs):
         gradient_checkpointing_kwargs={"use_reentrant": False},
         max_seq_length=4096,  # 이슈
         packing=True,
-        report_to=["tensorboard"],
+        # report_to=["tensorboard"],
         seed=42,
     )
 
@@ -121,7 +123,7 @@ def main(**kwargs):
         data_collator=data_collator,
         args=training_args,
         peft_config=peft_config,
-        callbacks=[tensorboard_callback],
+        # callbacks=[tensorboard_callback],
     )
 
     trainer.train()
